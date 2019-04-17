@@ -48,9 +48,13 @@ void clear_buffer(char * buffer, size_t len) {
 }
 
 /* Copies a char data inside another char data with the end char without an end character*/
-void copy_char_from_buffer(char * from, char * to, char end) {
+void copy_char_from_buffer(char * from, char * to, char end, int to_len) {
     int i=0;
     while (from[i] != end) {
+        if (i >= to_len) {
+            to_len += 10;
+            to = realloc(to, to_len*sizeof(char));
+        }
         to[i] = from[i];
         ++i;
     }
@@ -104,14 +108,16 @@ void file_to_buffer(FILE * file, char * buffer, char end, int buff_len) {
 }
 
 orientation get_orientation(char * line) {
-    return (line[0] == 'H') ? H : V;
+    orientation or = (line[0] == 'H') ? H : V;
+    return or;
 }
 
 int get_n_tags(char * line) {
     char * buffer = malloc(10*sizeof(char));
-    copy_char_from_buffer(line, buffer, ' ');
+    copy_char_from_buffer(line, buffer, ' ', 10);
+    int n = atoi(buffer);
     free(buffer);
-    return atoi(buffer);
+    return n;
 }
 
 int get_index(char * line) {
@@ -197,9 +203,7 @@ struct photoset * ps_new(char * filename) {
     char * line = malloc(100*sizeof(char));
     file_to_buffer(file, line, '\n', 100);
     this->first_photo = photo_new(line, 0);
-//    struct photo * prev = this->first_photo;
-//    for (int i=0; i < )
-    
+
     return this;
 }
 
