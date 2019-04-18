@@ -90,7 +90,55 @@ char * file_to_buffer(FILE * file, char * buffer, char end, int buff_len) {
     return buffer;
 }
 
-
+/* Checks if there is a duplicated photo in a slideshow */
+int no_duplicates(struct slide * slideshow) {
+    struct slide * this = slideshow;
+    int this_ID = this->first->photoID;
+    int second_ID = -1;
+    int two_verticals = 0;
+    if (this->second) {
+        two_verticals = 1;
+        second_ID = this->second->photoID;
+        if (this_ID == second_ID) {
+            return -1;
+        }
+    }
+    
+    struct slide * checking = this->next_slide;
+    
+    while(this->next_slide) {  // TODO: check condition
+        if (checking->second) {
+            if ((checking->second->photoID == this_ID) || (two_verticals && (checking->second->photoID == second_ID))) {
+                return -1;
+            }
+        }
+        if (checking->first) {
+            if ((checking->first->photoID == this_ID) || (two_verticals && (checking->first->photoID == second_ID))) {
+                return -1;
+            }
+        }
+        if (!checking->next_slide) {
+            this = this->next_slide;// WORKING HERE
+            
+            this_ID = this->first->photoID;
+            second_ID = -1;
+            if (this->second) {
+                two_verticals = 1;
+                second_ID = this->second->photoID;
+                if (this_ID == second_ID) {
+                    return -1;
+                }
+            }
+            else {
+                two_verticals = 0;
+                second_ID = -1;
+            }
+        }
+        
+    }
+    return 0;
+    
+};
 
 // ##### GETTER FUNCTIONS #####
 
@@ -296,34 +344,19 @@ struct slide * create_slide(struct photoset * p, int photoid) {
 
 
 
-// ##### OTHER HELPING FUNCTIONS #####
-struct slide * create_slideshow(struct photoset * photoset, const char * slideshow) {
-    // TODO create slideshow;
-    int vertical = 0;
-    int index = 0;
-    
-    struct slide * s = NULL;
-    struct slide * prev = NULL;
-    
-    ints_tuple next_photoID = get_next_photoID(&slideshow[index]);
-    index += next_photoID.len +1;
-    prev = create_slide(photoset, next_photoID.n);
-    
-    
-    while(slideshow[index] != 0) {
-        next_photoID = get_next_photoID(&slideshow[index]);
-        index += next_photoID.len +1;
-        
-        s = create_slide(photoset, next_photoID.n);
-        if (s->orientation == V) {
-            vertical = 1;
-        }
-    }
-    
-    return NULL;
-}
-
 // ########## DISTRUCT STRUCTS FUNCTIONS ##########
+
+/* Destructor: clear all memory allocated for the given slideshow. */
+void slide_delete(struct slide * this) {
+    if (this) {
+        if (this->next_slide) {
+            slide_delete(this->next_slide);
+        }
+        this->first = NULL;
+        this->second = NULL;
+        free(this);
+    }
+}
 
 /* Destructor: clear all memory allocated for the given tag. */
 void tag_delete(struct tag * this) {
@@ -369,6 +402,50 @@ void ps_delete(struct photoset * p) {
 
 // ########## SCORING FUNCTIONS ##########
 
+// ##### OTHER HELPING FUNCTIONS #####
+struct slide * create_slideshow(struct photoset * photoset, const char * slideshow) {
+    // TODO create slideshow;
+    int vertical = 0;
+    int index = 0;
+    
+    ints_tuple next_photoID = get_next_photoID(&slideshow[index]);
+    index += next_photoID.len +1;
+    struct slide * first = create_slide(photoset, next_photoID.n);
+    
+    struct slide * s = NULL;
+    struct slide * p = first;
+    
+    
+    while(slideshow[index] != 0) {
+        next_photoID = get_next_photoID(&slideshow[index]);
+        index += next_photoID.len +1;
+        
+        if (vertical == 1) {
+            //            struct photo * other = get_photo(p, next_photoID.n);
+            struct photo * other = get_photo(photoset, next_photoID.n);
+            if (other->orientation != V) {
+                slide_delete(first);
+                return NULL;
+            }
+            vertical = 0;
+            s->second = other;
+        }
+        else {
+            s = create_slide(photoset, next_photoID.n);
+            if (s->first->orientation == V) {
+                vertical = 1;
+            }
+            p->next_slide = s;
+            p = s;
+        }
+        
+        
+    }
+    
+    return first;
+}
+
+
 /* Calculates the score of the given slideshow.
  * The slideshow is a string representation of the
  * photo IDs concatenated with ','. The interest factor
@@ -378,6 +455,13 @@ void ps_delete(struct photoset * p) {
  * at least a duplicated or a nonpaired vertical photo.
  */
 int ps_score_default(struct photoset * p, const char * slideshow) {
-    struct slide * first_slide = create_slideshow(p, slideshow);
+    struct slide * slides = create_slideshow(p, slideshow);
+    if (slides == NULL) {
+        return -1;
+    }
+    // TODO: check if duplicated
     return 0;
 }
+
+
+
