@@ -42,6 +42,12 @@ struct slide {
 };
 
 typedef struct {
+    int intersection;
+    int symm_diff0;
+    int symm_diff1;
+} tags_for_scoring;
+
+typedef struct {
     char * string;
     int n;
 } string_int_tuple;
@@ -235,6 +241,19 @@ struct photo * get_photo(struct photoset * p, int photoID) {
     return current;
 }
 
+/* Given two slides computes the intersection and symmetric difference of the tags  */
+tags_for_scoring get_tags_info(struct slide * i, struct slide * j) {
+//    tags_for_scoring counter = {0, 0, 0};
+    int i_vertical = (i->orientation == H) ? 1 : 0;
+    int j_vertical = (j->orientation == H) ? 1 : 0;
+    char * this = i->first->first_tag;
+    
+    while (1) { // TODO: add condition later
+        
+        
+    }
+    
+}
 
 // ##### SETTER FUNCTIONS #####
 
@@ -464,9 +483,21 @@ int ps_score_default(struct photoset * p, const char * slideshow) {
         printf("dude no!\n");
         return -1;
     }
+    int counter = 0;
     
-    // TODO: check if duplicated
-    return 0;
+    struct slide * s_i = slides;
+    struct slide * s_j = slides->next_slide;
+    
+    tags_for_scoring data;
+
+    
+    while (s_j->next_slide) {
+        data = get_tags_info(s_i, s_j);
+        
+    }
+    
+    
+    return counter;
 }
 
 

@@ -13,8 +13,8 @@
             timestampString = "577295501.485528"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "463"
-            endingLineNumber = "463"
+            startingLineNumber = "466"
+            endingLineNumber = "466"
             landmarkName = "ps_score_default()"
             landmarkType = "9">
          </BreakpointContent>
@@ -32,22 +32,6 @@
             startingLineNumber = "424"
             endingLineNumber = "424"
             landmarkName = "create_slideshow()"
-            landmarkType = "9">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            shouldBeEnabled = "No"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "Slideshow/slideshow.c"
-            timestampString = "577295501.485647"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "468"
-            endingLineNumber = "468"
-            landmarkName = "ps_score_default()"
             landmarkType = "9">
          </BreakpointContent>
       </BreakpointProxy>
