@@ -38,12 +38,18 @@ struct slide {
     orientation orientation;
     struct photo * first;
     struct photo * second;
+    struct slide * next_slide;
 };
 
 typedef struct {
     char * string;
     int n;
-} tuple;
+} string_int_tuple;
+
+typedef struct {
+    int n;
+    int len;
+} ints_tuple;
 
 // ########## HELPER FUNCTIONS ##########
 /* Given a char * buffer it clears it overriding it with '\0's */
@@ -67,6 +73,27 @@ void copy_char_from_buffer(char * from, char * to, char end, int to_len) {
     to[i] = '\0';
 }
 
+
+
+/* Copies chars from a file to a char * buffer given an end char to stop at */
+char * file_to_buffer(FILE * file, char * buffer, char end, int buff_len) {
+    int c;
+    int i=0;
+    while ((c=fgetc(file)) != end && c != EOF) {
+        if (i >= buff_len) {
+            buff_len += 100;
+            buffer = realloc(buffer, buff_len*sizeof(char));
+        }
+        buffer[i++] = c;
+    }
+    buffer[i] = '\0';
+    return buffer;
+}
+
+
+
+// ##### GETTER FUNCTIONS #####
+
 /* Copies a char data inside another char data with the end char without an end character*/
 void get_len_and_copy_char(char * from, char * to, char end, int to_len) {
     int i=0;
@@ -83,7 +110,7 @@ void get_len_and_copy_char(char * from, char * to, char end, int to_len) {
 }
 
 /* Copies a char data inside another char data with the end char without an end character*/
-tuple get_len_copy_char(char * from, char * to, char end, int to_len) {
+string_int_tuple get_len_copy_char(char * from, char * to, char end, int to_len) {
     int i=0;
     while (from[i] != end && from[i] != '\0') {
         if (i >= to_len) {
@@ -95,24 +122,8 @@ tuple get_len_copy_char(char * from, char * to, char end, int to_len) {
     }
     to[i] = '\0';
     to = realloc(to, i+1);
-    tuple temp = {to, i};
+    string_int_tuple temp = {to, i};
     return  temp;
-}
-
-
-/* Copies chars from a file to a char * buffer given an end char to stop at */
-char * file_to_buffer(FILE * file, char * buffer, char end, int buff_len) {
-    int c;
-    int i=0;
-    while ((c=fgetc(file)) != end && c != EOF) {
-        if (i >= buff_len) {
-            buff_len += 100;
-            buffer = realloc(buffer, buff_len*sizeof(char));
-        }
-        buffer[i++] = c;
-    }
-    buffer[i] = '\0';
-    return buffer;
 }
 
 /* gives the orientation of a photo */
@@ -141,7 +152,7 @@ int get_index(char * line) {
 
 
 /* gives the number id of the next photo */
-int get_next_photoID(const char * slideshow) {
+ints_tuple get_next_photoID(const char * slideshow) {
     int buffer_len = 10;
     char * buffer = malloc(buffer_len*sizeof(char));
     int i=0;
@@ -157,8 +168,23 @@ int get_next_photoID(const char * slideshow) {
     buffer[i] = '\0';
     int n = atoi(buffer);
     free(buffer);
-    return n;
+    ints_tuple temp = {n, i};
+    return temp;
 }
+
+struct photo * get_photo(struct photoset * p, int photoID) {
+    if (photoID > p->n) {
+        return NULL;
+    }
+    struct photo * current = p->first_photo;
+    while(current->photoID != photoID) {
+        current = current->next_photo;
+    }
+    return current;
+}
+
+
+// ##### SETTER FUNCTIONS #####
 
 
 // ########## CREATE STRUCTS FUNCTIONS ##########
@@ -174,7 +200,7 @@ struct tag * tag_new(char * line) {
     this->photo = NULL;
     
     char * name = malloc(10*sizeof(char));
-    tuple temp = get_len_copy_char(line, name, ' ', 10);
+    string_int_tuple temp = get_len_copy_char(line, name, ' ', 10);
     int offset = temp.n;
     name = temp.string;
     this->hashtag = name;
@@ -255,6 +281,50 @@ struct photoset * ps_new(char * filename) {
     return this;
 }
 
+struct slide * create_slide(struct photoset * p, int photoid) {
+    struct slide * this = malloc(sizeof(struct slide));
+    if (!this) {
+        return NULL;
+    }
+    this->next_slide = NULL;
+    this->second = NULL;
+    this->first = get_photo(p, photoid);
+    this->orientation = this->first->orientation;
+
+    return this;
+}
+
+
+
+// ##### OTHER HELPING FUNCTIONS #####
+struct slide * create_slideshow(struct photoset * photoset, const char * slideshow) {
+    // TODO create slideshow;
+    int vertical = 0;
+    int index = 0;
+    
+    struct slide * s = NULL;
+    struct slide * prev = NULL;
+    
+    ints_tuple next_photoID = get_next_photoID(&slideshow[index]);
+    index += next_photoID.len +1;
+    prev = create_slide(photoset, next_photoID.n);
+    
+    
+    while(slideshow[index] != 0) {
+        next_photoID = get_next_photoID(&slideshow[index]);
+        index += next_photoID.len +1;
+        
+        s = create_slide(photoset, next_photoID.n);
+        if (s->orientation == V) {
+            vertical = 1;
+        }
+    }
+    
+    return NULL;
+}
+
+// ########## DISTRUCT STRUCTS FUNCTIONS ##########
+
 /* Destructor: clear all memory allocated for the given tag. */
 void tag_delete(struct tag * this) {
     if (this) {
@@ -297,6 +367,8 @@ void ps_delete(struct photoset * p) {
     }
 }
 
+// ########## SCORING FUNCTIONS ##########
+
 /* Calculates the score of the given slideshow.
  * The slideshow is a string representation of the
  * photo IDs concatenated with ','. The interest factor
@@ -306,6 +378,6 @@ void ps_delete(struct photoset * p) {
  * at least a duplicated or a nonpaired vertical photo.
  */
 int ps_score_default(struct photoset * p, const char * slideshow) {
-    struct slide = create_slide(get_next_photoID(slideshow));
-    return -1;
+    struct slide * first_slide = create_slideshow(p, slideshow);
+    return 0;
 }
