@@ -34,10 +34,10 @@ struct tag {
     struct tag * next;
 };
 
-//typedef struct {
-//    char * string;
-//    int len;
-//} tuple;
+typedef struct {
+    char * string;
+    int n;
+} tuple;
 
 // ########## HELPER FUNCTIONS ##########
 /* Given a char * buffer it clears it overriding it with '\0's */
@@ -77,7 +77,7 @@ void get_len_and_copy_char(char * from, char * to, char end, int to_len) {
 }
 
 /* Copies a char data inside another char data with the end char without an end character*/
-int get_len_copy_char(char * from, char * to, char end, int to_len) {
+tuple get_len_copy_char(char * from, char * to, char end, int to_len) {
     int i=0;
     while (from[i] != end && from[i] != '\0') {
         if (i >= to_len) {
@@ -89,12 +89,13 @@ int get_len_copy_char(char * from, char * to, char end, int to_len) {
     }
     to[i] = '\0';
     to = realloc(to, i+1);
-    return i;
+    tuple temp = {to, i};
+    return  temp;
 }
 
 
 /* Copies chars from a file to a char * buffer given an end char to stop at */
-void file_to_buffer(FILE * file, char * buffer, char end, int buff_len) {
+char * file_to_buffer(FILE * file, char * buffer, char end, int buff_len) {
     int c;
     int i=0;
     while ((c=fgetc(file)) != end && c != EOF) {
@@ -105,6 +106,7 @@ void file_to_buffer(FILE * file, char * buffer, char end, int buff_len) {
         buffer[i++] = c;
     }
     buffer[i] = '\0';
+    return buffer;
 }
 
 orientation get_orientation(char * line) {
@@ -143,7 +145,9 @@ struct tag * tag_new(char * line) {
     this->photo = NULL;
     
     char * name = malloc(10*sizeof(char));
-    int offset = get_len_copy_char(line, name, ' ', 10);
+    tuple temp = get_len_copy_char(line, name, ' ', 10);
+    int offset = temp.n;
+    name = temp.string;
     this->hashtag = name;
 //    printf("%c\n", &line[offset]);
     if (line[offset] != '\0'){
@@ -168,7 +172,6 @@ struct photo * photo_new(char * line, int photoID) {
     this->photoID = photoID;
     this->orientation = get_orientation(line);
     this->n_of_tags = get_n_tags(&line[2]);
-    this->first_tag = NULL; // TODO: create tag
     this->first_tag = tag_new(&line[3+get_index(&line[3])]);
 //    this->first_tag->photo = this; // TODO: add photo to all tag structs
     struct tag * current = this->first_tag;
@@ -196,13 +199,29 @@ struct photoset * ps_new(char * filename) {
     }
     // read all the file and create everything
     char * buffer = malloc(10*sizeof(char));
-    file_to_buffer(file, buffer, '\n', 10);
+    buffer = file_to_buffer(file, buffer, '\n', 10);
     this->n = atoi(buffer);
     free(buffer);
-    this->first_photo = NULL; // TODO: create photos
     char * line = malloc(100*sizeof(char));
-    file_to_buffer(file, line, '\n', 100);
+    line = file_to_buffer(file, line, '\n', 100);
     this->first_photo = photo_new(line, 0);
+    free (line);
+    
+    
+    
+    
+    struct photo * prev = this->first_photo;
+    struct photo * current;
+    for (int i=1; i < this->n; ++i) {
+        line = malloc(100*sizeof(char));
+        line = file_to_buffer(file, line, '\n', 100);
+//        printf("%s\n", line);
+        current = photo_new(line, i);
+        prev->next = current;
+        prev = current;
+        free(line);
+    }
+    
 
     return this;
 }
