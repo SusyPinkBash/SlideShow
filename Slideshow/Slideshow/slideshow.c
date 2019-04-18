@@ -25,13 +25,19 @@ struct photo {
     orientation orientation;
     int n_of_tags;
     struct tag * first_tag;
-    struct photo * next;
+    struct photo * next_photo;
 };
 
 struct tag {
     struct photo * photo;
     char * hashtag;
-    struct tag * next;
+    struct tag * next_tag;
+};
+
+struct slide {
+    orientation orientation;
+    struct photo * first;
+    struct photo * second;
 };
 
 typedef struct {
@@ -109,11 +115,13 @@ char * file_to_buffer(FILE * file, char * buffer, char end, int buff_len) {
     return buffer;
 }
 
+/* gives the orientation of a photo */
 orientation get_orientation(char * line) {
     orientation or = (line[0] == 'H') ? H : V;
     return or;
 }
 
+/* gives the number of tags */
 int get_n_tags(char * line) {
     char * buffer = malloc(10*sizeof(char));
     copy_char_from_buffer(line, buffer, ' ', 10);
@@ -122,6 +130,7 @@ int get_n_tags(char * line) {
     return n;
 }
 
+/* gets the index in a char pointer */
 int get_index(char * line) {
     int i = 0;
     while(line[i] != ' ') {
@@ -130,6 +139,26 @@ int get_index(char * line) {
     return ++i;
 }
 
+
+/* gives the number id of the next photo */
+int get_next_photoID(const char * slideshow) {
+    int buffer_len = 10;
+    char * buffer = malloc(buffer_len*sizeof(char));
+    int i=0;
+    
+    while (slideshow[i] != ',') {
+        if (i >= buffer_len) {
+            buffer_len += 10;
+            buffer = realloc(buffer, buffer_len*sizeof(char));
+        }
+        buffer[i] = slideshow[i];
+        ++i;
+    }
+    buffer[i] = '\0';
+    int n = atoi(buffer);
+    free(buffer);
+    return n;
+}
 
 
 // ########## CREATE STRUCTS FUNCTIONS ##########
@@ -151,10 +180,10 @@ struct tag * tag_new(char * line) {
     this->hashtag = name;
 //    printf("%c\n", &line[offset]);
     if (line[offset] != '\0'){
-        this->next = tag_new(&line[++offset]);
+        this->next_tag = tag_new(&line[++offset]);
     }
     else {
-        this->next = NULL;
+        this->next_tag = NULL;
     }
     return this;
 }
@@ -175,12 +204,12 @@ struct photo * photo_new(char * line, int photoID) {
     this->first_tag = tag_new(&line[3+get_index(&line[3])]);
 //    this->first_tag->photo = this; // TODO: add photo to all tag structs
     struct tag * current = this->first_tag;
-    while (current->next != NULL) {
+    while (current->next_tag != NULL) {
         current->photo = this;
-        current = current->next;
+        current = current->next_tag;
     }
     
-    this->next = NULL; // TODO: next photo
+    this->next_photo = NULL; // TODO: next photo
     return this;
 }
 
@@ -217,7 +246,7 @@ struct photoset * ps_new(char * filename) {
         line = file_to_buffer(file, line, '\n', 100);
 //        printf("%s\n", line);
         current = photo_new(line, i);
-        prev->next = current;
+        prev->next_photo = current;
         prev = current;
         free(line);
     }
@@ -226,3 +255,57 @@ struct photoset * ps_new(char * filename) {
     return this;
 }
 
+/* Destructor: clear all memory allocated for the given tag. */
+void tag_delete(struct tag * this) {
+    if (this) {
+        if (this->next_tag) {
+            tag_delete(this->next_tag);
+            this->next_tag = NULL;
+        }
+        this->photo = NULL;
+        free(this->hashtag);
+        free(this);
+    }
+    
+}
+
+/* Destructor: clear all memory allocated for the given photo. */
+void photo_delete(struct photo * this) {
+    if (this) {
+        if (this->first_tag) {
+            tag_delete(this->first_tag);
+            this->first_tag = NULL;
+        }
+        if (this->next_photo) {
+            photo_delete(this->next_photo);
+            this->next_photo = NULL;
+        }
+        free(this);
+    }
+    
+}
+
+
+/* Destructor: clear all memory allocated for the given photoset. */
+void ps_delete(struct photoset * p) {
+    if (p) {
+        if (p->first_photo) {
+            photo_delete(p->first_photo);
+            p->first_photo = NULL;
+        }
+        free(p);
+    }
+}
+
+/* Calculates the score of the given slideshow.
+ * The slideshow is a string representation of the
+ * photo IDs concatenated with ','. The interest factor
+ * between two adjacent slides is the minimum between two
+ * numbers: number of common tags and number of
+ * different tags. Return -1 if slideshow contains
+ * at least a duplicated or a nonpaired vertical photo.
+ */
+int ps_score_default(struct photoset * p, const char * slideshow) {
+    struct slide = create_slide(get_next_photoID(slideshow));
+    return -1;
+}
