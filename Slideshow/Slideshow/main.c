@@ -10,6 +10,7 @@ int main(){
     struct photoset* p = ps_new("test/photoset1.in");
     
     int s1 = ps_score_default(p, "0,1,2");
+//    int s1 = ps_score_default(p, "0,1,2");
 //    int s2 = ps_score_default(p, "0,3");
 //    int s3 = ps_score_default(p, "0,1,2,3");
 //    

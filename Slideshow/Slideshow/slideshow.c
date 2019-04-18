@@ -117,8 +117,11 @@ int no_duplicates(struct slide * slideshow) {
                 return -1;
             }
         }
-        if (!checking->next_slide) {
-            this = this->next_slide;// WORKING HERE
+        if (checking->next_slide) {
+            checking = checking->next_slide;
+        }
+        else {
+            this = this->next_slide;
             
             this_ID = this->first->photoID;
             second_ID = -1;
@@ -134,6 +137,7 @@ int no_duplicates(struct slide * slideshow) {
                 second_ID = -1;
             }
         }
+    
         
     }
     return 0;
@@ -456,9 +460,11 @@ struct slide * create_slideshow(struct photoset * photoset, const char * slidesh
  */
 int ps_score_default(struct photoset * p, const char * slideshow) {
     struct slide * slides = create_slideshow(p, slideshow);
-    if (slides == NULL) {
+    if (slides == NULL || (no_duplicates(slides) == -1)) {
+        printf("dude no!\n");
         return -1;
     }
+    
     // TODO: check if duplicated
     return 0;
 }
