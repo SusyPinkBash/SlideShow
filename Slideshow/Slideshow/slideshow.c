@@ -58,6 +58,18 @@ typedef struct {
 } ints_tuple;
 
 // ########## HELPER FUNCTIONS ##########
+
+/* Checks if the tags are equal */
+int check_two_tags(char * first, char * second) {
+    int i =0;
+    while(first[i] != 0 && second[i] != 0) {
+        if (first[i] != second[i])
+            return 0;
+        ++i;
+    }
+    return 1;
+}
+
 /* Given a char * buffer it clears it overriding it with '\0's */
 void clear_buffer(char * buffer, size_t len) {
     for (size_t i=0; i < len; ++i) {
@@ -78,7 +90,6 @@ void copy_char_from_buffer(char * from, char * to, char end, int to_len) {
     }
     to[i] = '\0';
 }
-
 
 
 /* Copies chars from a file to a char * buffer given an end char to stop at */
@@ -150,6 +161,55 @@ int no_duplicates(struct slide * slideshow) {
     
 };
 
+
+/* counts the number of equal tags in two V photos  */
+int count_n_equal_tags(struct photo * first, struct photo * second) {
+    
+    struct tag * this = first->first_tag;
+    struct tag * other = second->first_tag;
+    
+    int counter = 0;
+
+    
+    while (this->next_tag) {
+        if (check_two_tags(this->hashtag, other->hashtag)) {
+            ++counter;
+            this = this->next_tag;
+            other = second->first_tag;
+        }
+        else if (other->next_tag) {
+            other = other->next_tag;
+        }
+        else {
+            this = this->next_tag;
+            other = second->first_tag;
+        }
+        
+    }
+    
+    return counter;
+    
+}
+
+struct tag * copy_tag(struct tag * original) {
+    struct tag * copy = malloc(sizeof(struct tag));
+    copy->photo = original->photo;
+    copy->hashtag = original->hashtag;
+    copy->next_tag = NULL;
+    return copy;
+}
+
+/* Counts the number of tags in a linked list of tags */
+int count_tags(struct tag * tag) {
+    int counter = 0;
+    while (tag) {
+        ++counter;
+        tag = tag->next_tag;
+    }
+    return counter;
+}
+
+
 // ##### GETTER FUNCTIONS #####
 
 /* Copies a char data inside another char data with the end char without an end character*/
@@ -208,6 +268,14 @@ int get_index(char * line) {
     return ++i;
 }
 
+int get_strlen(const char * slideshow) {
+    int i = 0;
+    while (slideshow[i] != 0) {
+        ++i;
+    }
+    return i;
+}
+
 
 /* gives the number id of the next photo */
 ints_tuple get_next_photoID(const char * slideshow) {
@@ -241,19 +309,113 @@ struct photo * get_photo(struct photoset * p, int photoID) {
     return current;
 }
 
-/* Given two slides computes the intersection and symmetric difference of the tags  */
-tags_for_scoring get_tags_info(struct slide * i, struct slide * j) {
-//    tags_for_scoring counter = {0, 0, 0};
-    int i_vertical = (i->orientation == H) ? 1 : 0;
-    int j_vertical = (j->orientation == H) ? 1 : 0;
-    char * this = i->first->first_tag;
+struct tag * get_no_dup_tags(struct photo * first, struct photo * second) {
+    struct tag * this = first->first_tag;
+    struct tag * other = second->first_tag;
     
-    while (1) { // TODO: add condition later
-        
+    struct tag * starting = copy_tag(second->first_tag);
+    other = other->next_tag;
+    struct tag * new;
+    struct tag * prev = starting;
+    
+    while (other) {
+        new = copy_tag(other);
+        prev->next_tag = new;
+        prev = new;
+        other = other->next_tag;
+    }
+    
+    other = second->first_tag;
+    
+    while (this) {
+        if (check_two_tags(this->hashtag, other->hashtag)) {
+            this = this->next_tag;
+            other = second->first_tag;
+        }
+        else if (!other->next_tag && !this->next_tag) {
+            new = copy_tag(this);
+            prev->next_tag = new;
+            break;
+        }
+        else if (other->next_tag) {
+            other = other->next_tag;
+        }
+        else {
+            new = copy_tag(this);
+            prev->next_tag = new;
+            prev = new;
+            this = this->next_tag;
+            other = second->first_tag;
+        }
         
     }
     
+    return starting;
 }
+
+/* gets the min of two ints */
+int get_min(int i, int j) {
+    return (i <= j) ? i : j;
+}
+
+/* gets the minumum of the intersection and symbolyc differences */
+int get_tag_min(tags_for_scoring data) {
+    return get_min(data.intersection, (get_min(data.symm_diff0, data.symm_diff1)));
+}
+
+
+
+
+/* Given two slides computes the intersection and symmetric difference of the tags  */
+tags_for_scoring get_intersection_slide(struct slide * first, struct slide * second) {
+    struct tag * this, * other;
+    int n_this, n_other;
+    if (first->orientation == H) {
+        this = first->first->first_tag;
+        n_this = first->first->n_of_tags;
+    }
+    else {
+        this = get_no_dup_tags(first->first, first->second);
+        n_this = count_tags(this);
+    }
+    if (second->orientation == H) {
+        other = second->first->first_tag;
+        n_other = second->first->n_of_tags;
+    }
+    else {
+        other = get_no_dup_tags(second->first, second->second);
+        n_other = count_tags(other);
+    }
+    
+    tags_for_scoring counters = {0, 0, 0};
+    
+    while (this->next_tag) {
+        if (check_two_tags(this->hashtag, other->hashtag)) {
+            ++counters.intersection;
+            this = this->next_tag;
+            other = second->first->first_tag;
+        }
+        else if (other->next_tag) {
+            other = other->next_tag;
+        }
+        else if (!this->next_tag && !other->next_tag) {
+            ++counters.symm_diff0;
+        }
+        else {
+//            ++counters.symm_diff0;
+            this = this->next_tag;
+            other = second->first->first_tag;
+        }
+        
+    }
+    
+    counters.symm_diff0 = n_this - counters.intersection;
+    counters.symm_diff1 = n_other - counters.intersection;
+    
+    return counters;
+    
+}
+
 
 // ##### SETTER FUNCTIONS #####
 
@@ -366,7 +528,6 @@ struct slide * create_slide(struct photoset * p, int photoid) {
 }
 
 
-
 // ########## DISTRUCT STRUCTS FUNCTIONS ##########
 
 /* Destructor: clear all memory allocated for the given slideshow. */
@@ -381,6 +542,7 @@ void slide_delete(struct slide * this) {
     }
 }
 
+
 /* Destructor: clear all memory allocated for the given tag. */
 void tag_delete(struct tag * this) {
     if (this) {
@@ -390,6 +552,20 @@ void tag_delete(struct tag * this) {
         }
         this->photo = NULL;
         free(this->hashtag);
+        free(this);
+    }
+    
+}
+
+
+/* Destructor: clear all memory allocated for the given tag. */
+void tags_dup_delete(struct tag * this) {
+    if (this) {
+        if (this->next_tag) {
+            tag_delete(this->next_tag);
+            this->next_tag = NULL;
+        }
+        this->photo = NULL;
         free(this);
     }
     
@@ -438,8 +614,9 @@ struct slide * create_slideshow(struct photoset * photoset, const char * slidesh
     struct slide * s = NULL;
     struct slide * p = first;
     
-    
-    while(slideshow[index] != 0) {
+    int input_len = get_strlen(slideshow);
+    while(index < input_len) {
+//    while(slideshow[index] != 0) { // problem
         next_photoID = get_next_photoID(&slideshow[index]);
         index += next_photoID.len +1;
         
@@ -483,7 +660,7 @@ int ps_score_default(struct photoset * p, const char * slideshow) {
         printf("dude no!\n");
         return -1;
     }
-    int counter = 0;
+    int score = 0;
     
     struct slide * s_i = slides;
     struct slide * s_j = slides->next_slide;
@@ -491,14 +668,55 @@ int ps_score_default(struct photoset * p, const char * slideshow) {
     tags_for_scoring data;
 
     
-    while (s_j->next_slide) {
-        data = get_tags_info(s_i, s_j);
-        
+    while (s_j) {
+        data = get_intersection_slide(s_i, s_j);
+        score += get_tag_min(data);
+        s_i = s_j;
+        s_j = s_j->next_slide;
     }
     
+    slide_delete(slides);
     
-    return counter;
+    
+    
+    return score;
 }
 
+/* Calculates the score of the given slideshow.
+ * The slideshow is a string representation of the
+ * photo IDs concatenated with ','. The interest factor
+ * between every two adjacent slides are calculated by
+ * the given input function. It returns -1 if
+ * slideshow contains at least a duplicated photo or a
+ * nonpaired vertical photo.
+ */
+int ps_score(struct photoset * p, const char * slideshow, int (*interest_factor)(unsigned intersection, unsigned differences)) {
+    struct slide * slides = create_slideshow(p, slideshow);
+    if (slides == NULL || (no_duplicates(slides) == -1)) {
+        printf("dude no!\n");
+        return -1;
+    }
+    int score = 0;
+    
+    struct slide * s_i = slides;
+    struct slide * s_j = slides->next_slide;
+    
+    tags_for_scoring data;
+    
+    
+    while (s_j) {
+        data = get_intersection_slide(s_i, s_j);
+        score += interest_factor(data.intersection, data.symm_diff0+data.symm_diff1);
+        s_i = s_j;
+        s_j = s_j->next_slide;
+    }
+    
+    slide_delete(slides);
+    
+    
+    
+    return score;
+    
+}
 
 
