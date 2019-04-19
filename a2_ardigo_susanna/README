@@ -1,0 +1,28 @@
+SUSANNA ARDIGO
+
+SYSTEMS PROGRAMMING
+
+ASSIGNMENT 2: SLIDESHOW
+
+
+########## IMPLEMENTATION ##########
+
+The main idea is: linked list. Almost all the structs are linked list with pointer to the next struct element
+
+
+##### DATA STRUCTURES #####
+
+PHOTOSET: is a struct that contains the whole phtoset. It knows how many photo there a in the photoset and it has the pointer to the first photo.
+
+PHOTO: a photo contains its photoID, the orientation (as enum), the number of tags, a pointer to the first tag, a pointer to the next photo in the photoset.
+
+TAG: a struct that has a pointer to its photo, the chars of the tag and a pointer to the next tag.
+
+SLIDE: a struct which contains the orientation and pointers to the photos. It can point to one horizontal photo or two vertical photos. It also contains a pointer to the next slide.
+
+OTHER STRUCTS: the other structs are created only to be able to return multiple values and/or pointers from a function.
+
+
+##### CODE STYLE #####
+I tried to subdivide my code into as many functions as possible to make it more clean, reusable and understandable.
+
