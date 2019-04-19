@@ -159,7 +159,7 @@ int no_duplicates(struct slide * slideshow) {
                 second_ID = -1;
             }
         }
-    
+        
         
     }
     return 0;
@@ -174,7 +174,7 @@ int count_n_equal_tags(struct photo * first, struct photo * second) {
     struct tag * other = second->first_tag;
     
     int counter = 0;
-
+    
     
     while (this->next_tag) {
         if (check_two_tags(this->hashtag, other->hashtag)) {
@@ -407,7 +407,7 @@ tags_for_scoring get_intersection_slide(struct slide * first, struct slide * sec
             ++counters.symm_diff0;
         }
         else {
-//            ++counters.symm_diff0;
+            //            ++counters.symm_diff0;
             this = this->next_tag;
             other = second->first->first_tag;
         }
@@ -442,7 +442,7 @@ struct tag * tag_new(char * line) {
     int offset = temp.n;
     name = temp.string;
     this->hashtag = name;
-//    printf("%c\n", &line[offset]);
+    //    printf("%c\n", &line[offset]);
     if (line[offset] != '\0'){
         this->next_tag = tag_new(&line[++offset]);
     }
@@ -457,7 +457,7 @@ struct tag * tag_new(char * line) {
  * Creates a Photo from a given char *
  */
 struct photo * photo_new(char * line, int photoID) {
-//    printf("%s\n", line);
+    //    printf("%s\n", line);
     struct photo * this = malloc(sizeof(struct photo));
     if (!this) {
         return NULL;
@@ -466,7 +466,7 @@ struct photo * photo_new(char * line, int photoID) {
     this->orientation = get_orientation(line);
     this->n_of_tags = get_n_tags(&line[2]);
     this->first_tag = tag_new(&line[3+get_index(&line[3])]);
-//    this->first_tag->photo = this; // TODO: add photo to all tag structs
+    //    this->first_tag->photo = this; // TODO: add photo to all tag structs
     struct tag * current = this->first_tag;
     while (current->next_tag != NULL) {
         current->photo = this;
@@ -508,14 +508,14 @@ struct photoset * ps_new(char * filename) {
     for (int i=1; i < this->n; ++i) {
         line = malloc(100*sizeof(char));
         line = file_to_buffer(file, line, '\n', 100);
-//        printf("%s\n", line);
+        //        printf("%s\n", line);
         current = photo_new(line, i);
         prev->next_photo = current;
         prev = current;
         free(line);
     }
     
-
+    
     return this;
 }
 
@@ -528,7 +528,7 @@ struct slide * create_slide(struct photoset * p, int photoid) {
     this->second = NULL;
     this->first = get_photo(p, photoid);
     this->orientation = this->first->orientation;
-
+    
     return this;
 }
 
@@ -615,7 +615,12 @@ struct slide * create_slideshow(struct photoset * photoset, const char * slidesh
     index += next_photoID.len +1;
     struct slide * first = create_slide(photoset, next_photoID.n);
     
-    struct slide * s = NULL;
+    if (first->first->orientation == V) {
+        vertical = 1;
+    }
+    
+    
+    struct slide * s = first;
     struct slide * p = first;
     
     int input_len = get_strlen(slideshow);
@@ -668,7 +673,7 @@ int ps_score_default(struct photoset * p, const char * slideshow) {
     struct slide * s_j = slides->next_slide;
     
     tags_for_scoring data;
-
+    
     
     while (s_j) {
         data = get_intersection_slide(s_i, s_j);
@@ -720,5 +725,4 @@ int ps_score(struct photoset * p, const char * slideshow, int (*interest_factor)
     return score;
     
 }
-
 
