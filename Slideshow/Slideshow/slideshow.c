@@ -123,7 +123,7 @@ int no_duplicates(struct slide * slideshow) {
     
     struct slide * checking = this->next_slide;
     
-    while(this->next_slide) {  // TODO: check condition
+    while(this && checking) {  // TODO: check condition
         if (checking->second) {
             if ((checking->second->photoID == this_ID) || (two_verticals && (checking->second->photoID == second_ID))) {
                 return -1;
@@ -138,7 +138,12 @@ int no_duplicates(struct slide * slideshow) {
             checking = checking->next_slide;
         }
         else {
-            this = this->next_slide;
+            if (this->next_slide)
+                this = this->next_slide;
+            else break;
+            if (this->next_slide)
+                checking = this->next_slide;
+            else break;
             
             this_ID = this->first->photoID;
             second_ID = -1;
@@ -603,7 +608,6 @@ void ps_delete(struct photoset * p) {
 
 // ##### OTHER HELPING FUNCTIONS #####
 struct slide * create_slideshow(struct photoset * photoset, const char * slideshow) {
-    // TODO create slideshow;
     int vertical = 0;
     int index = 0;
     
@@ -616,7 +620,6 @@ struct slide * create_slideshow(struct photoset * photoset, const char * slidesh
     
     int input_len = get_strlen(slideshow);
     while(index < input_len) {
-//    while(slideshow[index] != 0) { // problem
         next_photoID = get_next_photoID(&slideshow[index]);
         index += next_photoID.len +1;
         
@@ -657,7 +660,6 @@ struct slide * create_slideshow(struct photoset * photoset, const char * slidesh
 int ps_score_default(struct photoset * p, const char * slideshow) {
     struct slide * slides = create_slideshow(p, slideshow);
     if (slides == NULL || (no_duplicates(slides) == -1)) {
-        printf("dude no!\n");
         return -1;
     }
     int score = 0;

@@ -30,29 +30,40 @@ int main(){
     queries[9] = "2340,2341,25522,25523,62022,62023,25070,25071,24924,24925,19136,19137,41048,41049,7944,7945,70052,70053,77722,77723,17862,17863,79516,79517,45630,45631,31584,31585,71174,71175,43982,43983,5616,5617,20030,20031,44530,44531,8058,8059,31182,31183,17306,17307,75444,75445,18158,18159,39892,39893,2100,2101,21182,21183,13012,13013,16840,16841,45776,45777,75868,75869,5470,5471";
     
     int TEST_SIZE = 5;
-    
+
     for(int i = 0; i < TEST_SIZE; i++){
         sprintf(filename, "test/photoset%d.in", i + 1);
         printf("i = %d\n", i);
         p[i] = ps_new(filename);
-        
+
         // i=0 : 0,1
         // i=1 : 2,3
         // i=2 : 4,5
         // i=3 : 6,7
         // i=4 : 8,9
-        
-        
+
+
         int s1 = ps_score_default(p[i], queries[2 * i]);
         int s2 = ps_score_default(p[i], queries[2 * i + 1]);
-        
+
 //        assert(s1 == scores[2*i]);
         printf("\t %d == %d\n", s1, scores[2*i]);
         printf("\t %d == %d\n", s2, scores[2*i+1]);
 //        assert(s2 == scores[2*i+1]);
     }
-    
+
     for(int i = 0; i < TEST_SIZE; i++){
         ps_delete(p[i]);
     }
+//    struct photoset* p = ps_new("test/photoset1.in");
+//
+//    int s1 = ps_score_default(p, "0,1,2");
+//    int s2 = ps_score_default(p, "0,3");
+//    int s3 = ps_score_default(p, "0,1,2,3");
+//
+//    assert((s1 == 0));
+//    assert((s2 == 1));
+//    assert((s3 == 1));
+//
+//    ps_delete(p);
 }
